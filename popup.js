@@ -2,38 +2,48 @@ const newNameInput   = document.getElementById('newName');
 const renameBtn      = document.getElementById('renameBtn');
 const resetBtn       = document.getElementById('resetBtn');
 const currentTitleEl = document.getElementById('currentTitle');
-const currentDot     = document.getElementById('currentDot');
+const dot            = document.getElementById('dot');
 const statusEl       = document.getElementById('status');
 const savedListEl    = document.getElementById('savedList');
 const savedCount     = document.getElementById('savedCount');
 const lockRow        = document.getElementById('lockRow');
 const lockToggle     = document.getElementById('lockToggle');
 const lockIcon       = document.getElementById('lockIcon');
-const lockIconWrap   = document.getElementById('lockIconBox');
+const lockBox        = document.getElementById('lockBox');
 
 let currentTab  = null;
 let statusTimer = null;
 
+/* ── utils ── */
 function showStatus(msg, isError = false) {
   statusEl.textContent = msg;
   statusEl.className = 'status visible ' + (isError ? 'err' : 'ok');
   clearTimeout(statusTimer);
-  statusTimer = setTimeout(() => statusEl.classList.remove('visible'), 2200);
+  statusTimer = setTimeout(() => statusEl.classList.remove('visible'), 2400);
 }
 
 function getStorageKey(url) {
-  try {
-    const u = new URL(url);
-    return 'rename_' + u.origin + u.pathname;
-  } catch {
-    return 'rename_' + url;
-  }
+  try { const u = new URL(url); return 'rename_' + u.origin + u.pathname; }
+  catch { return 'rename_' + url; }
 }
 
 function getLockKey(url) {
-  return 'lock_' + getStorageKey(url).replace('rename_', '');
+  try { const u = new URL(url); return 'lock_' + u.origin + u.pathname; }
+  catch { return 'lock_' + url; }
 }
 
+// Safe sendMessage — ignores errors on restricted pages (chrome://, new tab, etc.)
+async function safeSend(tabId, msg) {
+  try {
+    await chrome.tabs.sendMessage(tabId, msg);
+  } catch (_) {}
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── load current tab ── */
 async function loadCurrentTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   currentTab = tab;
@@ -41,17 +51,14 @@ async function loadCurrentTab() {
   currentTitleEl.title = tab.title || '';
 }
 
-function setDot(isRenamed) {
-  currentDot.classList.toggle('renamed', isRenamed);
-}
-
+/* ── lock state ── */
 async function loadLockState() {
   if (!currentTab) return;
-  const key   = getStorageKey(currentTab.url);
-  const saved = await chrome.storage.local.get(key);
-  const isRenamed = !!saved[key];
+  const key  = getStorageKey(currentTab.url);
+  const data = await chrome.storage.local.get(key);
+  const isRenamed = !!data[key];
 
-  setDot(isRenamed);
+  dot.classList.toggle('on', isRenamed);
   lockRow.style.display = isRenamed ? 'flex' : 'none';
   if (!isRenamed) return;
 
@@ -60,59 +67,51 @@ async function loadLockState() {
   const locked   = lockData[lk] === true;
   lockToggle.checked = locked;
   lockIcon.textContent = locked ? '🔒' : '🔓';
-  lockIconWrap.classList.toggle('active', locked);
+  lockBox.classList.toggle('on', locked);
 }
 
 lockToggle.addEventListener('change', async () => {
   if (!currentTab) return;
-  const lk     = getLockKey(currentTab.url);
   const locked = lockToggle.checked;
-  await chrome.storage.local.set({ [lk]: locked });
+  await chrome.storage.local.set({ [getLockKey(currentTab.url)]: locked });
   lockIcon.textContent = locked ? '🔒' : '🔓';
-  lockIconWrap.classList.toggle('active', locked);
-  await chrome.tabs.sendMessage(currentTab.id, { action: 'setLock', locked });
+  lockBox.classList.toggle('on', locked);
+  await safeSend(currentTab.id, { action: 'setLock', locked });
   showStatus(locked ? 'Titolo bloccato' : 'Titolo libero');
 });
 
+/* ── saved list ── */
 async function loadSavedList() {
   const all     = await chrome.storage.local.get(null);
   const entries = Object.entries(all).filter(([k]) => k.startsWith('rename_'));
-
   savedCount.textContent = entries.length;
 
-  if (entries.length === 0) {
-    savedListEl.innerHTML = '<div class="empty-state">Nessuna tab rinominata</div>';
+  if (!entries.length) {
+    savedListEl.innerHTML = '<div class="empty">Nessuna tab rinominata</div>';
     return;
   }
 
-  savedListEl.innerHTML = entries.map(([key, data]) => `
-    <div class="saved-item">
-      <div class="saved-item-left">
-        <div class="saved-item-name">${escapeHtml(data.name)}</div>
-        <div class="saved-item-url">${escapeHtml(data.url)}</div>
+  savedListEl.innerHTML = entries.map(([key, d]) => `
+    <div class="item">
+      <div class="item-left">
+        <div class="item-name">${escapeHtml(d.name)}</div>
+        <div class="item-url">${escapeHtml(d.url)}</div>
       </div>
-      <button class="del-btn" data-key="${key}" title="Rimuovi">✕</button>
+      <button class="xbtn" data-key="${key}" title="Rimuovi">✕</button>
     </div>
   `).join('');
 
-  savedListEl.querySelectorAll('.del-btn').forEach(btn => {
+  savedListEl.querySelectorAll('.xbtn').forEach(btn =>
     btn.addEventListener('click', async () => {
       await chrome.storage.local.remove(btn.dataset.key);
       await loadSavedList();
       await loadLockState();
       showStatus('Rimossa');
-    });
-  });
+    })
+  );
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
+/* ── rename ── */
 renameBtn.addEventListener('click', async () => {
   const name = newNameInput.value.trim();
   if (!name) { showStatus('Inserisci un nome', true); return; }
@@ -120,7 +119,7 @@ renameBtn.addEventListener('click', async () => {
 
   const key = getStorageKey(currentTab.url);
   await chrome.storage.local.set({ [key]: { name, url: currentTab.url } });
-  await chrome.tabs.sendMessage(currentTab.id, { action: 'rename', title: name });
+  await safeSend(currentTab.id, { action: 'rename', title: name });
 
   currentTitleEl.textContent = name;
   newNameInput.value = '';
@@ -129,22 +128,22 @@ renameBtn.addEventListener('click', async () => {
   await loadLockState();
 });
 
+/* ── reset ── */
 resetBtn.addEventListener('click', async () => {
   if (!currentTab) return;
   const key = getStorageKey(currentTab.url);
   const lk  = getLockKey(currentTab.url);
   await chrome.storage.local.remove([key, lk]);
-  await chrome.tabs.sendMessage(currentTab.id, { action: 'reset' });
+  await safeSend(currentTab.id, { action: 'reset' });
   showStatus('Titolo ripristinato');
   await loadCurrentTab();
   await loadSavedList();
   await loadLockState();
 });
 
-newNameInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') renameBtn.click();
-});
+newNameInput.addEventListener('keydown', e => { if (e.key === 'Enter') renameBtn.click(); });
 
+/* ── init ── */
 (async () => {
   await loadCurrentTab();
   await loadSavedList();
