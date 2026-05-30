@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tab Renamer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      width: 320px;
+      background: #0d0d0d;
+      color: #e8e8e8;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      padding: 18px 18px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #1e1e1e;
+    }
+
+    .header-logo {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #ff6b6b, #ee3c6a);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(238,60,106,0.4);
+    }
+
+    .header h1 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -0.2px;
+    }
+
+    .header-sub {
+      font-size: 11px;
+      color: #555;
+      margin-top: 1px;
+    }
+
+    /* ── CONTENT ── */
+    .content { padding: 16px; }
+
+    /* current title chip */
+    .current-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #161616;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+    }
+
+    .current-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #3a3a3a;
+      flex-shrink: 0;
+    }
+
+    .current-dot.renamed { background: #ee3c6a; box-shadow: 0 0 6px rgba(238,60,106,0.6); }
+
+    .current-text {
+      font-size: 12px;
+      color: #666;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* input area */
+    .field-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 6px;
+    }
+
+    .input-wrap {
+      display: flex;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: #161616;
+      border: 1px solid #222;
+      border-radius: 8px;
+      color: #e8e8e8;
+      font-size: 13px;
+      font-family: inherit;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #ee3c6a;
+      box-shadow: 0 0 0 3px rgba(238,60,106,0.12);
+    }
+
+    input[type="text"]::placeholder { color: #333; }
+
+    .btn-primary {
+      background: #ee3c6a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+      letter-spacing: -0.1px;
+    }
+
+    .btn-primary:hover { background: #d42f5c; }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-ghost {
+      background: none;
+      border: 1px solid #222;
+      color: #555;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-ghost:hover { border-color: #444; color: #aaa; }
+
+    .bottom-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    /* status */
+    .status {
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.25s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .status.visible { opacity: 1; }
+    .status.ok  { color: #4ade80; }
+    .status.err { color: #ee3c6a; }
+
+    /* lock row */
+    .lock-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #161616;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 12px;
+      gap: 10px;
+    }
+
+    .lock-info { display: flex; align-items: center; gap: 8px; }
+
+    .lock-icon-wrap {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      background: #1e1e1e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .lock-icon-wrap.active { background: rgba(238,60,106,0.15); }
+
+    .lock-texts {}
+    .lock-title { font-size: 12px; font-weight: 500; color: #bbb; }
+    .lock-desc  { font-size: 10px; color: #444; margin-top: 1px; }
+
+    /* toggle */
+    .toggle { position: relative; width: 34px; height: 19px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #2a2a2a;
+      border-radius: 19px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .slider::before {
+      content: '';
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      left: 3px;
+      top: 3px;
+      background: #555;
+      border-radius: 50%;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .toggle input:checked + .slider { background: #ee3c6a; }
+    .toggle input:checked + .slider::before { transform: translateX(15px); background: #fff; }
+
+    /* divider */
+    .divider {
+      height: 1px;
+      background: #1a1a1a;
+      margin: 14px 0;
+    }
+
+    /* saved list */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: #3a3a3a;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .section-count {
+      font-size: 10px;
+      color: #333;
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 1px 7px;
+    }
+
+    .saved-list { max-height: 130px; overflow-y: auto; }
+
+    .saved-list::-webkit-scrollbar { width: 3px; }
+    .saved-list::-webkit-scrollbar-track { background: transparent; }
+    .saved-list::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+
+    .saved-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: #111;
+      border: 1px solid #1a1a1a;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      gap: 8px;
+      transition: border-color 0.15s;
+    }
+
+    .saved-item:hover { border-color: #2a2a2a; }
+
+    .saved-item-left { overflow: hidden; flex: 1; }
+
+    .saved-item-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: #ccc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .saved-item-url {
+      font-size: 10px;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+
+    .del-btn {
+      background: none;
+      border: none;
+      color: #2a2a2a;
+      cursor: pointer;
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      transition: background 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .del-btn:hover { background: rgba(238,60,106,0.15); color: #ee3c6a; }
+
+    .empty-state {
+      color: #2a2a2a;
+      font-size: 12px;
+      text-align: center;
+      padding: 14px 0;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-logo">✏️</div>
+    <div>
+      <h1>Tab Renamer</h1>
+      <div class="header-sub">Rinomina qualsiasi tab</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="current-wrap">
+      <div class="current-dot" id="currentDot"></div>
+      <div class="current-text" id="currentTitle">Caricamento...</div>
+    </div>
+
+    <div class="field-label">Nuovo nome</div>
+    <div class="input-wrap">
+      <input type="text" id="newName" placeholder="es. Dashboard lavoro…" autocomplete="off" />
+      <button class="btn-primary" id="renameBtn">Salva</button>
+    </div>
+
+    <div class="bottom-row">
+      <div class="status" id="status"></div>
+      <button class="btn-ghost" id="resetBtn">↺ Ripristina</button>
+    </div>
+
+    <div class="lock-row" id="lockRow" style="display:none">
+      <div class="lock-info">
+        <div class="lock-icon-wrap" id="lockIconWrap">
+          <span id="lockIcon">🔓</span>
+        </div>
+        <div class="lock-texts">
+          <div class="lock-title">Blocca titolo</div>
+          <div class="lock-desc">Impedisce alla pagina di sovrascrivere il nome</div>
+        </div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="lockToggle" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-header">
+      <span class="section-title">Tab rinominate</span>
+      <span class="section-count" id="savedCount">0</span>
+    </div>
+
+    <div class="saved-list" id="savedList">
+      <div class="empty-state">Nessuna tab rinominata</div>
+    </div>
+
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
