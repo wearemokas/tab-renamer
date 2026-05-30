@@ -3,7 +3,8 @@
   "name": "Tab Renamer",
   "version": "1.0",
   "description": "Rinomina le tab del browser",
-  "permissions": ["tabs", "storage"],
+  "permissions": ["tabs", "storage", "scripting"],
+  "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
