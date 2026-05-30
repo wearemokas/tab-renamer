@@ -5,16 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tab Renamer</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      width: 320px;
-      background: #0d0d0d;
-      color: #e8e8e8;
+      width: 340px;
+      min-height: 420px;
+      background: linear-gradient(145deg, #dff0ff 0%, #c8e8ff 40%, #d4e8ff 70%, #e0d8ff 100%);
+      color: #1a2a3a;
       overflow: hidden;
+      position: relative;
+    }
+
+    /* background blobs */
+    body::before {
+      content: '';
+      position: fixed;
+      width: 220px; height: 220px;
+      background: radial-gradient(circle, rgba(120,180,255,0.45) 0%, transparent 70%);
+      top: -60px; right: -60px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(160,130,255,0.3) 0%, transparent 70%);
+      bottom: -40px; left: -40px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* ── GLASS CARD ── */
+    .glass {
+      background: rgba(255,255,255,0.45);
+      backdrop-filter: blur(20px) saturate(1.8);
+      -webkit-backdrop-filter: blur(20px) saturate(1.8);
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 20px;
     }
 
     /* ── HEADER ── */
@@ -22,148 +53,174 @@
       padding: 18px 18px 14px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      border-bottom: 1px solid #1e1e1e;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.3);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
     }
 
     .header-logo {
-      width: 28px;
-      height: 28px;
-      background: linear-gradient(135deg, #ff6b6b, #ee3c6a);
-      border-radius: 8px;
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #60b8ff, #a07aff);
+      border-radius: 11px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 17px;
       flex-shrink: 0;
-      box-shadow: 0 2px 8px rgba(238,60,106,0.4);
+      box-shadow:
+        0 4px 14px rgba(96,184,255,0.5),
+        inset 0 1px 1px rgba(255,255,255,0.6);
     }
 
-    .header h1 {
-      font-size: 14px;
-      font-weight: 600;
-      color: #fff;
-      letter-spacing: -0.2px;
+    .header-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f2035;
+      letter-spacing: -0.3px;
     }
-
     .header-sub {
       font-size: 11px;
-      color: #555;
+      color: #6a8fac;
       margin-top: 1px;
+      font-weight: 400;
     }
 
     /* ── CONTENT ── */
-    .content { padding: 16px; }
+    .content { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 
-    /* current title chip */
-    .current-wrap {
+    /* current title */
+    .current-card {
       display: flex;
       align-items: center;
-      gap: 8px;
-      background: #161616;
-      border: 1px solid #222;
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 14px;
+      gap: 10px;
+      padding: 11px 14px;
     }
 
-    .current-dot {
-      width: 6px;
-      height: 6px;
+    .pulse-dot {
+      width: 8px; height: 8px;
       border-radius: 50%;
-      background: #3a3a3a;
+      background: #b0cfe8;
       flex-shrink: 0;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .pulse-dot.renamed {
+      background: #60b8ff;
+      box-shadow: 0 0 0 3px rgba(96,184,255,0.25);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 3px rgba(96,184,255,0.25); }
+      50%      { box-shadow: 0 0 0 6px rgba(96,184,255,0.1); }
     }
 
-    .current-dot.renamed { background: #ee3c6a; box-shadow: 0 0 6px rgba(238,60,106,0.6); }
+    .current-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #90afc4;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      display: block;
+      margin-bottom: 2px;
+    }
 
-    .current-text {
-      font-size: 12px;
-      color: #666;
+    .current-value {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1a2a3a;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 240px;
     }
 
-    /* input area */
+    /* field */
     .field-label {
       font-size: 10px;
       font-weight: 600;
-      color: #444;
+      color: #7a9db8;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
+      letter-spacing: 0.7px;
       margin-bottom: 6px;
+      padding-left: 2px;
     }
 
-    .input-wrap {
+    .input-row {
       display: flex;
-      gap: 7px;
-      margin-bottom: 8px;
+      gap: 8px;
     }
 
     input[type="text"] {
       flex: 1;
-      background: #161616;
-      border: 1px solid #222;
-      border-radius: 8px;
-      color: #e8e8e8;
+      background: rgba(255,255,255,0.6);
+      border: 1.5px solid rgba(255,255,255,0.8);
+      border-radius: 12px;
+      color: #0f2035;
       font-size: 13px;
       font-family: inherit;
-      padding: 9px 12px;
+      font-weight: 500;
+      padding: 10px 14px;
       outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      box-shadow: 0 2px 8px rgba(96,150,200,0.1), inset 0 1px 1px rgba(255,255,255,0.9);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
+
+    input[type="text"]::placeholder { color: #9ab8cc; }
 
     input[type="text"]:focus {
-      border-color: #ee3c6a;
-      box-shadow: 0 0 0 3px rgba(238,60,106,0.12);
+      border-color: rgba(96,184,255,0.8);
+      box-shadow: 0 0 0 4px rgba(96,184,255,0.15), 0 2px 8px rgba(96,150,200,0.15), inset 0 1px 1px rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.8);
     }
 
-    input[type="text"]::placeholder { color: #333; }
-
-    .btn-primary {
-      background: #ee3c6a;
+    /* buttons */
+    .btn-save {
+      background: linear-gradient(135deg, #60b8ff, #7a80ff);
       color: white;
       border: none;
-      border-radius: 8px;
-      padding: 9px 16px;
+      border-radius: 12px;
+      padding: 10px 18px;
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
       font-family: inherit;
       cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
       white-space: nowrap;
       letter-spacing: -0.1px;
+      box-shadow:
+        0 4px 14px rgba(96,184,255,0.45),
+        inset 0 1px 1px rgba(255,255,255,0.35);
+      transition: transform 0.12s, box-shadow 0.12s;
     }
-
-    .btn-primary:hover { background: #d42f5c; }
-    .btn-primary:active { transform: scale(0.97); }
-
-    .btn-ghost {
-      background: none;
-      border: 1px solid #222;
-      color: #555;
-      border-radius: 8px;
-      padding: 7px 12px;
-      font-size: 12px;
-      font-family: inherit;
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
-      white-space: nowrap;
+    .btn-save:hover {
+      box-shadow: 0 6px 20px rgba(96,184,255,0.55), inset 0 1px 1px rgba(255,255,255,0.35);
+      transform: translateY(-1px);
     }
-
-    .btn-ghost:hover { border-color: #444; color: #aaa; }
+    .btn-save:active { transform: scale(0.96); }
 
     .bottom-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-top: 4px;
+      justify-content: space-between;
     }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.5);
+      border: 1.5px solid rgba(255,255,255,0.7);
+      color: #6a90aa;
+      border-radius: 10px;
+      padding: 7px 13px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.75); color: #3a6a8a; }
 
     /* status */
     .status {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 500;
       opacity: 0;
       transition: opacity 0.25s;
@@ -172,206 +229,195 @@
       gap: 4px;
     }
     .status.visible { opacity: 1; }
-    .status.ok  { color: #4ade80; }
-    .status.err { color: #ee3c6a; }
+    .status.ok  { color: #3ab87a; }
+    .status.err { color: #e05555; }
 
-    /* lock row */
-    .lock-row {
+    /* lock */
+    .lock-card {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #161616;
-      border: 1px solid #222;
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-top: 12px;
+      padding: 11px 14px;
       gap: 10px;
     }
 
-    .lock-info { display: flex; align-items: center; gap: 8px; }
+    .lock-info { display: flex; align-items: center; gap: 10px; }
 
-    .lock-icon-wrap {
-      width: 26px;
-      height: 26px;
-      border-radius: 7px;
-      background: #1e1e1e;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
+    .lock-icon-box {
+      width: 30px; height: 30px;
+      border-radius: 9px;
+      background: rgba(200,228,255,0.6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
       flex-shrink: 0;
       transition: background 0.2s;
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.8);
+    }
+    .lock-icon-box.active {
+      background: rgba(96,184,255,0.25);
+      box-shadow: 0 0 0 2px rgba(96,184,255,0.3), inset 0 1px 1px rgba(255,255,255,0.8);
     }
 
-    .lock-icon-wrap.active { background: rgba(238,60,106,0.15); }
-
-    .lock-texts {}
-    .lock-title { font-size: 12px; font-weight: 500; color: #bbb; }
-    .lock-desc  { font-size: 10px; color: #444; margin-top: 1px; }
+    .lock-title { font-size: 13px; font-weight: 600; color: #1a3050; }
+    .lock-desc  { font-size: 10px; color: #7a9db8; margin-top: 1px; }
 
     /* toggle */
-    .toggle { position: relative; width: 34px; height: 19px; flex-shrink: 0; }
+    .toggle { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
     .toggle input { opacity: 0; width: 0; height: 0; }
-
     .slider {
-      position: absolute;
-      inset: 0;
-      background: #2a2a2a;
-      border-radius: 19px;
+      position: absolute; inset: 0;
+      background: rgba(180,210,230,0.6);
+      border: 1.5px solid rgba(255,255,255,0.7);
+      border-radius: 22px;
       cursor: pointer;
       transition: background 0.2s;
+      box-shadow: inset 0 1px 3px rgba(100,150,180,0.2);
     }
-
     .slider::before {
       content: '';
       position: absolute;
-      width: 13px;
-      height: 13px;
-      left: 3px;
-      top: 3px;
-      background: #555;
+      width: 15px; height: 15px;
+      left: 2px; top: 2px;
+      background: white;
       border-radius: 50%;
-      transition: transform 0.2s, background 0.2s;
+      box-shadow: 0 1px 4px rgba(80,130,160,0.3);
+      transition: transform 0.2s;
     }
-
-    .toggle input:checked + .slider { background: #ee3c6a; }
-    .toggle input:checked + .slider::before { transform: translateX(15px); background: #fff; }
+    .toggle input:checked + .slider {
+      background: linear-gradient(135deg, #60b8ff, #7a80ff);
+      border-color: rgba(96,184,255,0.4);
+    }
+    .toggle input:checked + .slider::before { transform: translateX(16px); }
 
     /* divider */
     .divider {
       height: 1px;
-      background: #1a1a1a;
-      margin: 14px 0;
+      background: rgba(255,255,255,0.5);
+      margin: 2px 0;
     }
 
     /* saved list */
-    .section-header {
+    .section-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
+      padding: 0 2px;
     }
-
     .section-title {
       font-size: 10px;
-      font-weight: 600;
-      color: #3a3a3a;
+      font-weight: 700;
+      color: #7a9db8;
       text-transform: uppercase;
       letter-spacing: 0.8px;
     }
-
-    .section-count {
+    .section-badge {
       font-size: 10px;
-      color: #333;
-      background: #1a1a1a;
+      font-weight: 600;
+      color: #6a9ab8;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.8);
       border-radius: 10px;
-      padding: 1px 7px;
+      padding: 1px 8px;
     }
 
-    .saved-list { max-height: 130px; overflow-y: auto; }
-
+    .saved-list { max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
     .saved-list::-webkit-scrollbar { width: 3px; }
-    .saved-list::-webkit-scrollbar-track { background: transparent; }
-    .saved-list::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+    .saved-list::-webkit-scrollbar-thumb { background: rgba(150,190,220,0.4); border-radius: 3px; }
 
     .saved-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 10px;
-      background: #111;
-      border: 1px solid #1a1a1a;
-      border-radius: 8px;
-      margin-bottom: 4px;
+      padding: 9px 12px;
       gap: 8px;
-      transition: border-color 0.15s;
+      background: rgba(255,255,255,0.45);
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 12px;
+      transition: background 0.15s;
     }
-
-    .saved-item:hover { border-color: #2a2a2a; }
+    .saved-item:hover { background: rgba(255,255,255,0.65); }
 
     .saved-item-left { overflow: hidden; flex: 1; }
-
     .saved-item-name {
-      font-size: 12px;
-      font-weight: 500;
-      color: #ccc;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 12px; font-weight: 600;
+      color: #1a2a3a;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
     .saved-item-url {
-      font-size: 10px;
-      color: #333;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 10px; color: #8aacbf;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       margin-top: 1px;
     }
 
     .del-btn {
-      background: none;
-      border: none;
-      color: #2a2a2a;
+      background: rgba(220,100,100,0.1);
+      border: 1px solid rgba(220,100,100,0.15);
+      color: rgba(200,80,80,0.5);
       cursor: pointer;
-      width: 22px;
-      height: 22px;
-      border-radius: 5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
+      width: 22px; height: 22px;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
       transition: background 0.15s, color 0.15s;
       flex-shrink: 0;
     }
-
-    .del-btn:hover { background: rgba(238,60,106,0.15); color: #ee3c6a; }
+    .del-btn:hover { background: rgba(220,80,80,0.18); color: #cc4444; }
 
     .empty-state {
-      color: #2a2a2a;
       font-size: 12px;
+      color: #9ab8cc;
       text-align: center;
-      padding: 14px 0;
+      padding: 16px 0;
       font-style: italic;
     }
   </style>
 </head>
 <body>
 
+  <!-- HEADER -->
   <div class="header">
     <div class="header-logo">✏️</div>
     <div>
-      <h1>Tab Renamer</h1>
+      <div class="header-title">Tab Renamer</div>
       <div class="header-sub">Rinomina qualsiasi tab</div>
     </div>
   </div>
 
   <div class="content">
 
-    <div class="current-wrap">
-      <div class="current-dot" id="currentDot"></div>
-      <div class="current-text" id="currentTitle">Caricamento...</div>
+    <!-- current title -->
+    <div class="glass current-card">
+      <div class="pulse-dot" id="currentDot"></div>
+      <div style="overflow:hidden">
+        <span class="current-label">Titolo attuale</span>
+        <div class="current-value" id="currentTitle">Caricamento...</div>
+      </div>
     </div>
 
-    <div class="field-label">Nuovo nome</div>
-    <div class="input-wrap">
-      <input type="text" id="newName" placeholder="es. Dashboard lavoro…" autocomplete="off" />
-      <button class="btn-primary" id="renameBtn">Salva</button>
+    <!-- input -->
+    <div>
+      <div class="field-label">Nuovo nome</div>
+      <div class="input-row">
+        <input type="text" id="newName" placeholder="es. Dashboard lavoro…" autocomplete="off" />
+        <button class="btn-save" id="renameBtn">Salva</button>
+      </div>
     </div>
 
+    <!-- bottom row: status + reset -->
     <div class="bottom-row">
       <div class="status" id="status"></div>
       <button class="btn-ghost" id="resetBtn">↺ Ripristina</button>
     </div>
 
-    <div class="lock-row" id="lockRow" style="display:none">
+    <!-- lock -->
+    <div class="glass lock-card" id="lockRow" style="display:none">
       <div class="lock-info">
-        <div class="lock-icon-wrap" id="lockIconWrap">
+        <div class="lock-icon-box" id="lockIconBox">
           <span id="lockIcon">🔓</span>
         </div>
-        <div class="lock-texts">
+        <div>
           <div class="lock-title">Blocca titolo</div>
-          <div class="lock-desc">Impedisce alla pagina di sovrascrivere il nome</div>
+          <div class="lock-desc">Impedisce alla pagina di sovrascrivere</div>
         </div>
       </div>
       <label class="toggle">
@@ -382,9 +428,10 @@
 
     <div class="divider"></div>
 
-    <div class="section-header">
+    <!-- saved list -->
+    <div class="section-row">
       <span class="section-title">Tab rinominate</span>
-      <span class="section-count" id="savedCount">0</span>
+      <span class="section-badge" id="savedCount">0</span>
     </div>
 
     <div class="saved-list" id="savedList">

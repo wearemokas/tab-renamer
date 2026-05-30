@@ -9,7 +9,7 @@ const savedCount     = document.getElementById('savedCount');
 const lockRow        = document.getElementById('lockRow');
 const lockToggle     = document.getElementById('lockToggle');
 const lockIcon       = document.getElementById('lockIcon');
-const lockIconWrap   = document.getElementById('lockIconWrap');
+const lockIconWrap   = document.getElementById('lockIconBox');
 
 let currentTab  = null;
 let statusTimer = null;
