@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Tab Renamer",
-  "version": "1.0",
-  "description": "Rinomina le tab del browser",
+  "name": "RHD Tab Renamer",
+  "version": "1.1",
+  "description": "Rinomina le tab del browser — by RHD",
   "permissions": ["tabs", "storage", "scripting"],
   "host_permissions": ["<all_urls>"],
   "action": {
