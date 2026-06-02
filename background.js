@@ -1,26 +1,40 @@
-// Re-apply saved tab names (and lock state) when a tab finishes loading
+// Auto-apply saved renames when a tab finishes loading
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== 'complete' || !tab.url) return;
 
   try {
-    const u = new URL(tab.url);
-    const base     = u.origin + u.pathname;
-    const renameKey = 'rename_' + base;
-    const lockKey   = 'lock_' + base;
+    const u          = new URL(tab.url);
+    const renameKey  = 'rename_' + u.origin + u.pathname;
+    const lockKey    = 'lock_'   + u.origin + u.pathname;
 
     chrome.storage.local.get([renameKey, lockKey], (data) => {
-      if (data[renameKey]) {
-        chrome.tabs.sendMessage(tabId, {
-          action: 'rename',
-          title:  data[renameKey].name,
-        }).catch(() => {});
+      const entry  = data[renameKey];
+      const locked = data[lockKey] === true;
+      if (!entry) return;
 
-        // Send lock state right after
-        chrome.tabs.sendMessage(tabId, {
-          action: 'setLock',
-          locked: data[lockKey] === true,
-        }).catch(() => {});
-      }
+      const name = entry.name;
+
+      // Inject title directly — no sendMessage, no connection errors
+      chrome.scripting.executeScript({
+        target: { tabId },
+        func: (title, isLocked) => {
+          // save original for reset
+          if (!document.head.dataset._origTitle) {
+            document.head.dataset._origTitle = document.title;
+          }
+          document.title = title;
+
+          // if locked, keep enforcing against dynamic changes
+          if (isLocked) {
+            const target = document.querySelector('title') ?? document.head;
+            new MutationObserver(() => {
+              if (document.title !== title) document.title = title;
+            }).observe(target, { subtree: true, characterData: true, childList: true });
+          }
+        },
+        args: [name, locked]
+      }).catch(() => {}); // silently ignore restricted pages
     });
-  } catch {}
+
+  } catch (_) {}
 });
