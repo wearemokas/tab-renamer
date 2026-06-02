@@ -34,8 +34,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
       // Apply immediately…
       inject();
-      // …and again after 800ms in case the page overwrites it after load
-      setTimeout(inject, 800);
+      // …and again after 3.5s in case the page overwrites it after load
+      setTimeout(inject, 3500);
     });
 
   } catch (_) {}
